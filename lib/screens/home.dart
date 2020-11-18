@@ -1,6 +1,8 @@
 import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:core';
+import 'package:PKPlan/screens/custom_spannable_grid.dart';
+import 'package:PKPlan/screens/lectures.dart';
 import 'package:PKPlan/shared/loading.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
@@ -14,26 +16,8 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class Lecture {
-  final String name;
-  final Color color;
-
-  Lecture({this.name, this.color});
-}
-
 class _HomeState extends State<Home> {
   List<Iterable<String>> _schedule = [];
-  List<Lecture> _lectures = [
-    Lecture(name: 'Analiza matematyczna', color: Color(0xff333399)),
-    Lecture(name: 'Algebra z geometrią', color: Color(0xff00FF00)),
-    Lecture(name: 'Wstęp do programowania', color: Color(0xffFFC000)),
-    Lecture(name: 'WDP', color: Color(0xffFFC000)),
-    Lecture(name: 'Podstawy fizyki', color: Color(0xff99CCFF)),
-    Lecture(name: 'J.angielski', color: Color(0xffFFFFFD)),
-    Lecture(
-        name: 'Zagadnienia społeczne i zawodowe informatyki',
-        color: Color(0xff800080)),
-  ];
   int _start = 0;
   int _end = 8; // take elements + 1
   bool _loading = false;
@@ -61,7 +45,7 @@ class _HomeState extends State<Home> {
     if (x == null) {
       if (T == String) {
         // tryParse to [String]
-        return ' ' as T ?? fallback;
+        return '' as T ?? fallback;
       }
     }
 
@@ -75,7 +59,7 @@ class _HomeState extends State<Home> {
 
   bool _containsLectures(row) {
     for (String e in row) {
-      for (Lecture lecture in _lectures)
+      for (Lecture lecture in Lectures.list)
         if (e.contains(lecture.name)) return true;
     }
     return false;
@@ -101,7 +85,7 @@ class _HomeState extends State<Home> {
     return s.join('');
   }
 
-  List<String> _clearSpaces(List<String> row) {
+  List<String> _clearWhitespaces(List<String> row) {
     return row.map((e) => _trimWhitespace(e)).toList();
   }
 
@@ -116,44 +100,38 @@ class _HomeState extends State<Home> {
       RegExp regExp = RegExp(
         r'^([1-9]|0[1-9]|[12][0-9]|3[01])[-\.]([1-9]|0[1-9]|1[012])[-\.]\d{4}$',
       ); // regex for checking dates in format DD.MM.YY
-      DateTime now = DateTime.now();
-      DateTime date;
-      List<String> first; // first found date
-      List<String> second; // second found date
 
-      for (List<dynamic> row in sheet.rows) {
-        Iterable<dynamic> range = row.getRange(_start, _end); // leave 7 cells
-        List<String> casted = range
+      int lectureIndex = sheet.rows.indexWhere(
+        (e) {
+          if (e.first != null && regExp.hasMatch(e.first)) {
+            DateTime now = DateTime.now();
+            // check if first element in a row is a date
+            DateTime date = DateTime.parse(
+              e.first.split('.').reversed.join('.').replaceAll('.', '-'),
+            ); // parse date in format DD.MM.YY to YY/MM/DD
+            if (date.isAfter(now)) return true;
+          }
+          return false;
+        },
+      );
+
+      Iterable<dynamic> lecturesRange = sheet.rows.getRange(lectureIndex,
+          lectureIndex + 10); // get 7 rows + additional rows of nulls
+      // print(lecturesRange);
+
+      for (List<dynamic> row in lecturesRange) {
+        Iterable<dynamic> properRange = row.getRange(
+            _start, _end); // get only the range of the chosen yearbook
+        List<String> casted = properRange
             .map((dynamic s) => _tryCast<String>(s, fallback: 'fallback'))
             .toList(); // cast a row from [List<dynamic>] to [List<String>]
-        if (regExp
-            .hasMatch(casted.first)) // check if first value in a row is a date
-          date = DateTime.parse(
-            casted.first.split('.').reversed.join('.').replaceAll('.', '-'),
-          ); // parse date in format DD.MM.YY to YY/MM/DD
-
-        if (date != null && date.isAfter(now)) {
-          // check if date is found and it's after 'now' date
-          if (first == null) {
-            // if first date is found return it without a date
-            first = casted;
-            now = date; // now compare dates with a first found date
-          } else // if second date is found return it without a date
-            second = casted;
-        }
-
-        if (second != null)
-          break; // stop searching when the second date is found
-
-        if (first != null) {
-          if (_containsLectures(casted)) {
-            // check if row contains chosen lectures
-            casted = _clearSpaces(casted); // remove extra whitespaces
-            _schedule.add(casted.getRange(
-                // remove the unnecessary first and last element);
-                1,
-                casted.length));
-          }
+        if (_containsLectures(casted)) {
+          // check if row contains chosen lectures
+          casted = _clearWhitespaces(casted); // remove extra whitespaces
+          _schedule.add(casted.getRange(
+              // remove the unnecessary first and last element);
+              1,
+              casted.length));
         }
       }
       log(_schedule.toString());
@@ -163,44 +141,18 @@ class _HomeState extends State<Home> {
     setState(() => _loading = false);
   }
 
-  Container _createCell(text, color) {
-    return Container(
-      color: color,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Open Sans',
-          fontSize: 15.0,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    double cellHeight = (MediaQuery.of(context).size.height -
+            MediaQuery.of(context).padding.top) /
+        5;
+
     return _loading
         ? Center(child: Loading())
         : SafeArea(
-            child: Table(
-              children: <TableRow>[
-                TableRow(
-                  children: ['Godzina', '1', '2', '3', '4', '5', '6']
-                      .map((e) => _createCell(e, Colors.white))
-                      .toList(),
-                ),
-                for (Iterable<String> row in _schedule)
-                  TableRow(
-                    children: row.map(
-                      (e) {
-                        Color color;
-                        for (Lecture lecture in _lectures)
-                          if (e.contains(lecture.name)) color = lecture.color;
-                        if (e == '' || e.contains(':')) color = Colors.white;
-                        return _createCell(e, color);
-                      },
-                    ).toList(),
-                  ),
-              ],
+            child: CustomSpannableGrid(
+              schedule: _schedule,
+              cellHeight: cellHeight,
             ),
           );
   }

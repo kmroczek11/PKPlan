@@ -4,7 +4,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 class Loading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return SpinKitCubeGrid(
+    return SpinKitDualRing(
       color: Colors.blue,
       size: 100.0,
     );
