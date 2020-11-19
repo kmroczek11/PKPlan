@@ -17,7 +17,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  List<Iterable<String>> _schedule = [];
+  List<List<String>> _schedule = [];
   int _start = 0;
   int _end = 8; // take elements + 1
   bool _loading = false;
@@ -115,25 +115,32 @@ class _HomeState extends State<Home> {
         },
       );
 
-      Iterable<dynamic> lecturesRange = sheet.rows.getRange(lectureIndex,
-          lectureIndex + 10); // get 7 rows + additional rows of nulls
+      List<dynamic> lecturesRange = sheet.rows
+          .getRange(lectureIndex, lectureIndex + 10)
+          .toList(); // get 7 rows + additional rows of nulls
       // print(lecturesRange);
 
       for (List<dynamic> row in lecturesRange) {
-        Iterable<dynamic> properRange = row.getRange(
-            _start, _end); // get only the range of the chosen yearbook
+        List<dynamic> properRange = row
+            .getRange(_start, _end)
+            .toList(); // get only the range of the chosen yearbook
         List<String> casted = properRange
             .map((dynamic s) => _tryCast<String>(s, fallback: 'fallback'))
             .toList(); // cast a row from [List<dynamic>] to [List<String>]
         if (_containsLectures(casted)) {
           // check if row contains chosen lectures
           casted = _clearWhitespaces(casted); // remove extra whitespaces
-          _schedule.add(casted.getRange(
-              // remove the unnecessary first and last element);
-              1,
-              casted.length));
+          _schedule.add(
+            casted
+                .getRange(
+                    // remove the unnecessary first and last element);
+                    1,
+                    casted.length)
+                .toList(),
+          );
         }
       }
+
       log(_schedule.toString());
     } catch (e) {
       print(e.toString());
@@ -143,7 +150,7 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    double cellHeight = (MediaQuery.of(context).size.height -
+    double rowHeight = (MediaQuery.of(context).size.height -
             MediaQuery.of(context).padding.top) /
         5;
 
@@ -152,7 +159,7 @@ class _HomeState extends State<Home> {
         : SafeArea(
             child: CustomSpannableGrid(
               schedule: _schedule,
-              cellHeight: cellHeight,
+              rowHeight: rowHeight,
             ),
           );
   }
