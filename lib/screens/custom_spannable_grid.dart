@@ -85,8 +85,6 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
     _convertToCells(widget.schedule);
     int keyCounter = 0;
 
-    // _converted.forEach((e) => inspect(e));
-
     _converted.forEach(
       (cell) {
         List<Color> colors = [];
@@ -124,9 +122,8 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
   void _makePair(List<String> row, int startingIndex, int endingIndex,
       int columnIndex, int rowIndex) {
     List<String> pair = row.getRange(startingIndex, endingIndex + 1).toList();
-    print('$pair $columnIndex $rowIndex');
 
-    if (pair.contains('ćwiczenia')) {
+    if (pair.any((e) => e.contains('ćwiczenia'))) {
       String lectureName = pair.firstWhere((e) => e.contains('ćwiczenia'));
 
       _converted.add(
@@ -157,11 +154,9 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
       );
     }
 
-    columnIndex += 2;
-
-    if (endingIndex <
-        6) // ten warunek wyrzuca błąd nieprawidłowej wartości dla komórki
-      _makePair(row, endingIndex + 1, endingIndex + 2, columnIndex, rowIndex);
+    if (columnIndex < 6)
+      _makePair(
+          row, endingIndex + 1, endingIndex + 2, columnIndex + 2, rowIndex);
   }
 
   void _convertToCells(List<Iterable<String>> schedule) {
@@ -186,8 +181,7 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
             ),
           );
 
-          _makePair(row, 2, 3, 2,
-              rowIndex); // startingIndex i endingIndex do zmiany, dodatkowe puste komórki
+          _makePair(row, 2, 3, 2, rowIndex);
         } else {
           _converted.add(
             Cell(

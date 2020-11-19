@@ -105,11 +105,12 @@ class _HomeState extends State<Home> {
         (e) {
           if (e.first != null && regExp.hasMatch(e.first)) {
             DateTime now = DateTime.now();
+            // DateTime now = DateTime.parse('2020-11-22');
             // check if first element in a row is a date
             DateTime date = DateTime.parse(
               e.first.split('.').reversed.join('.').replaceAll('.', '-'),
-            ); // parse date in format DD.MM.YY to YY/MM/DD
-            if (date.isAfter(now)) return true;
+            ); // parse date in format DD.MM.YY to YY-MM-DD
+            if (date.compareTo(now) == 0 || date.isAfter(now)) return true;
           }
           return false;
         },
@@ -130,14 +131,10 @@ class _HomeState extends State<Home> {
         if (_containsLectures(casted)) {
           // check if row contains chosen lectures
           casted = _clearWhitespaces(casted); // remove extra whitespaces
-          _schedule.add(
-            casted
-                .getRange(
-                    // remove the unnecessary first and last element);
-                    1,
-                    casted.length)
-                .toList(),
-          );
+          casted.removeAt(0); // remove first extra element
+          casted.add(casted[1]); // move first break to the end
+          // print('casted $casted');
+          _schedule.add(casted);
         }
       }
 
