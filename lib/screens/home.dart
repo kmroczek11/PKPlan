@@ -192,8 +192,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         Expanded(
                           child: Text(
                             info,
-                            overflow: TextOverflow.clip,
-                            softWrap: true,
                           ),
                         ),
                       ],
