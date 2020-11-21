@@ -5,7 +5,9 @@ import 'package:PKPlan/screens/custom_spannable_grid.dart';
 import 'package:PKPlan/screens/lectures.dart';
 import 'package:PKPlan/shared/loading.dart';
 import 'package:excel/excel.dart';
+import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:quiver/strings.dart';
 
@@ -16,11 +18,13 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home> with TickerProviderStateMixin {
   List<List<String>> _schedule = [];
   int _start = 0;
   int _end = 8; // take elements + 1
   bool _loading = false;
+  double _scheduleUpdateBoxHeight = 26.0;
+  Color _scheduleUpdateBoxColor = Colors.green[800];
 
   @override
   void initState() {
@@ -150,13 +154,61 @@ class _HomeState extends State<Home> {
     double rowHeight = (MediaQuery.of(context).size.height -
             MediaQuery.of(context).padding.top) /
         5;
+    const String info =
+        'Niestety plan zamieszczony na stronie jest w przestarzałym formacie.Aby wykonać aktualizację, pobierz i przekonwertuj plan do formatu xlsx, następnie wgraj do aplikacji.';
 
     return _loading
         ? Center(child: Loading())
         : SafeArea(
-            child: CustomSpannableGrid(
-              schedule: _schedule,
-              rowHeight: rowHeight,
+            child: Stack(
+              alignment: AlignmentDirectional.center,
+              children: <Widget>[
+                InkWell(
+                  onTap: () => setState(
+                    () => {
+                      _scheduleUpdateBoxHeight = 110.0,
+                      _scheduleUpdateBoxColor = Colors.green[400]
+                    },
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: AnimatedContainer(
+                    // Use the properties stored in the State class.
+                    width: 250.0,
+                    height: _scheduleUpdateBoxHeight,
+                    duration: Duration(seconds: 1),
+                    curve: Curves.fastOutSlowIn,
+                    padding: EdgeInsets.all(5.0),
+                    decoration: BoxDecoration(
+                      color: _scheduleUpdateBoxColor,
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    child: Column(
+                      children: <Widget>[
+                        Text(
+                          'Dostępna jest aktualizacja planu!',
+                        ),
+                        Expanded(
+                          child: Text(
+                            info,
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Container(
+                //   width: MediaQuery.of(context).size.width,
+                //   height: MediaQuery.of(context).size.height,
+                //   child: CustomSpannableGrid(
+                //     schedule: _schedule,
+                //     rowHeight: rowHeight,
+                //   ),
+                // ),
+              ],
             ),
           );
   }
