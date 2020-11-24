@@ -2,13 +2,12 @@ import 'dart:developer';
 
 import 'package:PKPlan/screens/lectures.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:spannable_grid/spannable_grid.dart';
 
 class CustomSpannableGrid extends StatefulWidget {
-  CustomSpannableGrid({this.schedule, this.rowHeight, Key key})
-      : super(key: key);
+  CustomSpannableGrid({this.rowHeight, Key key}) : super(key: key);
 
-  final List<List<String>> schedule;
   final double rowHeight;
 
   @override
@@ -25,15 +24,9 @@ class Cell {
 }
 
 class _CustomSpannableGridState extends State<CustomSpannableGrid> {
+  List<List<String>> _schedule = [];
   List<SpannableGridCellData> _cells = List();
   List<Cell> _converted = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _createHeader();
-    _createCells();
-  }
 
   Container _createCell(String text, List<Color> tileColors, Color textColor) {
     return Container(
@@ -82,7 +75,9 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
   }
 
   void _createCells() {
-    _convertToCells(widget.schedule);
+    print('creating cells from $_schedule');
+    _convertToCells();
+    // _converted.forEach((c) => inspect(c));
     int keyCounter = 0;
 
     _converted.forEach(
@@ -159,10 +154,10 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
           row, endingIndex + 1, endingIndex + 2, columnIndex + 2, rowIndex);
   }
 
-  void _convertToCells(List<Iterable<String>> schedule) {
+  void _convertToCells() {
     int rowIndex = 2; // start from the second row because first is a header
 
-    schedule.forEach(
+    _schedule.forEach(
       (row) {
         String lectureName;
 
@@ -209,11 +204,16 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
 
   @override
   Widget build(BuildContext context) {
+    setState(() => _schedule = Provider.of<List<List<String>>>(context));
+    _createHeader();
+    _createCells();
+
     return SpannableGrid(
       rowHeight: widget.rowHeight,
       columns: 7,
       rows: 5,
       cells: _cells,
+      editingOnLongPress: false,
     );
   }
 }
