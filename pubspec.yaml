@@ -35,7 +35,7 @@ dependencies:
   expandable: ^4.1.4
   font_awesome_flutter: ^8.10.0
   provider: ^4.3.2+2
-
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

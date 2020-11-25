@@ -136,8 +136,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           _schedule.add(casted);
         }
       }
-
-      log(_schedule.toString());
+      // log(_schedule.toString());
     } catch (e) {
       e.toString();
     }
@@ -155,7 +154,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           .where((e) => e.first != null && _dateReg.hasMatch(e.first))
           .toList();
       dateRows.forEach((e) => _dates.add(e.first));
-      print(_dates);
 
       setState(
         () => _selectedDate = _sheet.rows.firstWhere(

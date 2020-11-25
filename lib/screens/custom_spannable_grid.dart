@@ -1,5 +1,5 @@
 import 'dart:developer';
-
+import 'dart:math';
 import 'package:PKPlan/screens/lectures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -23,10 +23,30 @@ class Cell {
   Cell({this.name, this.columnIndex, this.rowIndex, this.colSpan});
 }
 
-class _CustomSpannableGridState extends State<CustomSpannableGrid> {
+class _CustomSpannableGridState extends State<CustomSpannableGrid>
+    with TickerProviderStateMixin {
   List<List<String>> _schedule = [];
-  List<SpannableGridCellData> _cells = List();
-  List<Cell> _converted = [];
+  List<SpannableGridCellData> _cells = [];
+  AnimationController _controller;
+  Animation<double> _animation;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+      value: 0.5,
+    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.bounceIn);
+    _controller.forward();
+  }
+
+  @override
+  dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   Container _createCell(String text, List<Color> tileColors, Color textColor) {
     return Container(
@@ -75,12 +95,9 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
   }
 
   void _createCells() {
-    print('creating cells from $_schedule');
-    _convertToCells();
-    // _converted.forEach((c) => inspect(c));
-    int keyCounter = 0;
+    List<Cell> converted = _convertToCells(_schedule);
 
-    _converted.forEach(
+    converted.forEach(
       (cell) {
         List<Color> colors = [];
         Color textColor = Colors.black;
@@ -104,24 +121,22 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
             row: cell.rowIndex,
             columnSpan: cell.colSpan,
             rowSpan: 1,
-            id: keyCounter,
+            id: Random(),
             child: _createCell(cell.name, colors, textColor),
           ),
         );
-
-        keyCounter++;
       },
     );
   }
 
-  void _makePair(List<String> row, int startingIndex, int endingIndex,
-      int columnIndex, int rowIndex) {
+  List<Cell> _makePairs(List<Cell> converted, List<String> row,
+      int startingIndex, int endingIndex, int columnIndex, int rowIndex) {
     List<String> pair = row.getRange(startingIndex, endingIndex + 1).toList();
 
     if (pair.any((e) => e.contains('ćwiczenia'))) {
       String lectureName = pair.firstWhere((e) => e.contains('ćwiczenia'));
 
-      _converted.add(
+      converted.add(
         Cell(
           name: lectureName,
           columnIndex: columnIndex,
@@ -130,7 +145,7 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
         ),
       );
     } else {
-      _converted.add(
+      converted.add(
         Cell(
           name: pair.first,
           columnIndex: columnIndex,
@@ -139,7 +154,7 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
         ),
       );
 
-      _converted.add(
+      converted.add(
         Cell(
           name: pair[1],
           columnIndex: columnIndex + 1,
@@ -150,14 +165,17 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
     }
 
     if (columnIndex < 6)
-      _makePair(
-          row, endingIndex + 1, endingIndex + 2, columnIndex + 2, rowIndex);
+      return _makePairs(converted, row, endingIndex + 1, endingIndex + 2,
+          columnIndex + 2, rowIndex);
+
+    return converted;
   }
 
-  void _convertToCells() {
+  List<Cell> _convertToCells(List<List<String>> schedule) {
+    List<Cell> converted = [];
     int rowIndex = 2; // start from the second row because first is a header
 
-    _schedule.forEach(
+    schedule.forEach(
       (row) {
         String lectureName;
 
@@ -167,7 +185,7 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
         );
 
         if (lectureName == null) {
-          _converted.add(
+          converted.add(
             Cell(
               name: row.first,
               columnIndex: 1,
@@ -176,9 +194,9 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
             ),
           );
 
-          _makePair(row, 2, 3, 2, rowIndex);
+          converted = _makePairs(converted, row, 2, 3, 2, rowIndex);
         } else {
-          _converted.add(
+          converted.add(
             Cell(
               name: row.first,
               columnIndex: 1,
@@ -187,7 +205,7 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
             ),
           );
 
-          _converted.add(
+          converted.add(
             Cell(
               name: lectureName,
               columnIndex: 2,
@@ -196,10 +214,10 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
             ),
           );
         }
-
         rowIndex++;
       },
     );
+    return converted;
   }
 
   @override
@@ -208,12 +226,16 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid> {
     _createHeader();
     _createCells();
 
-    return SpannableGrid(
-      rowHeight: widget.rowHeight,
-      columns: 7,
-      rows: 5,
-      cells: _cells,
-      editingOnLongPress: false,
+    return ScaleTransition(
+      scale: _animation,
+      child: SpannableGrid(
+        key: ValueKey(Random()),
+        rowHeight: widget.rowHeight,
+        columns: 7,
+        rows: 5,
+        cells: _cells,
+        editingOnLongPress: false,
+      ),
     );
   }
 }
