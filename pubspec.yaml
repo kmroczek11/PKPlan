@@ -34,8 +34,9 @@ dependencies:
   spannable_grid: ^0.1.0
   expandable: ^4.1.4
   font_awesome_flutter: ^8.10.0
+  fluttertoast: ^7.1.4
   provider: ^4.3.2+2
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -53,6 +54,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/images/
     - schedule.xlsx
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -6,14 +6,12 @@ class Loading extends StatefulWidget {
   _LoadingState createState() => _LoadingState();
 }
 
-class _LoadingState extends State<Loading> with TickerProviderStateMixin {
+class _LoadingState extends State<Loading> {
   @override
   Widget build(BuildContext context) {
-    return SpinKitFoldingCube(
+    return SpinKitRotatingPlain(
       color: Colors.blue,
-      size: 100.0,
-      controller: AnimationController(
-          vsync: this, duration: const Duration(milliseconds: 2)),
+      size: 100,
     );
   }
 }
