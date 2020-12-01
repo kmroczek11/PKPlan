@@ -3,10 +3,10 @@ import 'dart:typed_data';
 import 'dart:core';
 import 'package:PKPlan/screens/custom_spannable_grid.dart';
 import 'package:PKPlan/screens/lectures.dart';
-import 'package:PKPlan/shared/loading.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -43,9 +43,14 @@ class _HomeState extends State<Home>
     WidgetsBinding.instance.addObserver(this);
   }
 
+  void _setLandscapeOrientation() {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }
 
@@ -225,136 +230,116 @@ class _HomeState extends State<Home>
     const String info =
         'Niestety plan zamieszczony na stronie jest w przestarzałym formacie. Aby wykonać aktualizację, pobierz i przekonwertuj plan do formatu xlsx, następnie wgraj do aplikacji.';
 
-    switch (MediaQuery.of(context).orientation) {
-      case Orientation.landscape:
-        return SafeArea(
-          child: Stack(
-            children: <Widget>[
-              FutureBuilder(
-                future: _loadSchedule,
-                builder: (BuildContext context, AsyncSnapshot snapshot) {
-                  if (snapshot.hasData)
-                    return Provider.value(
-                      value: _schedule,
-                      child: CustomSpannableGrid(
-                        rowHeight: rowHeight,
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: <Widget>[
+            FutureBuilder(
+              future: _loadSchedule,
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                if (snapshot.hasData) {
+                  _setLandscapeOrientation();
+                  return Provider.value(
+                    value: _schedule,
+                    child: CustomSpannableGrid(
+                      rowHeight: rowHeight,
+                    ),
+                  );
+                } else
+                  return Center(
+                    child: SpinKitRotatingPlain(
+                      color: Colors.blue,
+                      size: 100.0,
+                    ),
+                  );
+              },
+            ),
+            Align(
+              alignment: Alignment.topRight,
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                children: <Widget>[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton(
+                        dropdownColor: Colors.black,
+                        value: _selectedDate,
+                        icon: Icon(
+                          FontAwesomeIcons.arrowDown,
+                          color: Colors.white,
+                        ),
+                        iconSize: 20,
+                        elevation: 10,
+                        style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontSize: 15.0,
+                          color: Colors.white,
+                        ),
+                        onChanged: (String value) {
+                          setState(
+                            () => {
+                              _now = DateTime.parse(
+                                value
+                                    .split('.')
+                                    .reversed
+                                    .join('.')
+                                    .replaceAll('.', '-'),
+                              ),
+                              if (_getData()) _selectedDate = value,
+                            },
+                          );
+                        },
+                        items: _dates
+                            .map(
+                              (date) => DropdownMenuItem(
+                                value: date,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(5.0),
+                                  child: Text(date),
+                                ),
+                              ),
+                            )
+                            .toList(),
                       ),
-                    );
-                  else
-                    return Center(child: Loading());
-                },
-              ),
-              Align(
-                alignment: Alignment.topRight,
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    Container(
+                    ),
+                  ),
+                  Visibility(
+                    visible: false,
+                    child: AnimatedContainer(
+                      // Use the properties stored in the State class.
+                      width: 250.0,
+                      height: _scheduleUpdateBoxHeight,
+                      duration: Duration(seconds: 1),
+                      curve: Curves.fastOutSlowIn,
+                      padding: EdgeInsets.all(5.0),
                       decoration: BoxDecoration(
-                        color: Colors.black,
+                        color: _scheduleUpdateBoxColor,
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton(
-                          dropdownColor: Colors.black,
-                          value: _selectedDate,
-                          icon: Icon(
-                            FontAwesomeIcons.arrowDown,
-                            color: Colors.white,
+                      child: Column(
+                        children: <Widget>[
+                          Text(
+                            'Dostępna jest aktualizacja planu!',
                           ),
-                          iconSize: 20,
-                          elevation: 10,
-                          style: TextStyle(
-                            fontFamily: 'Open Sans',
-                            fontSize: 15.0,
-                            color: Colors.white,
+                          Expanded(
+                            child: Text(
+                              info,
+                            ),
                           ),
-                          onChanged: (String value) {
-                            setState(
-                              () => {
-                                _now = DateTime.parse(
-                                  value
-                                      .split('.')
-                                      .reversed
-                                      .join('.')
-                                      .replaceAll('.', '-'),
-                                ),
-                                if (_getData()) _selectedDate = value,
-                              },
-                            );
-                          },
-                          items: _dates
-                              .map(
-                                (date) => DropdownMenuItem(
-                                  value: date,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(5.0),
-                                    child: Text(date),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
+                        ],
                       ),
                     ),
-                    Visibility(
-                      visible: false,
-                      child: AnimatedContainer(
-                        // Use the properties stored in the State class.
-                        width: 250.0,
-                        height: _scheduleUpdateBoxHeight,
-                        duration: Duration(seconds: 1),
-                        curve: Curves.fastOutSlowIn,
-                        padding: EdgeInsets.all(5.0),
-                        decoration: BoxDecoration(
-                          color: _scheduleUpdateBoxColor,
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: Column(
-                          children: <Widget>[
-                            Text(
-                              'Dostępna jest aktualizacja planu!',
-                            ),
-                            Expanded(
-                              child: Text(
-                                info,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      case Orientation.portrait:
-        {
-          print('building row at ${DateTime.now()}');
-          return Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xffe7eff9),
-                  Color(0xffcfd6e6),
+                  ),
                 ],
               ),
             ),
-            child: Center(
-              child: Image(
-                image: AssetImage('assets/images/icon.png'),
-              ),
-            ),
-          );
-        }
-      default:
-        return null;
-    } // switch bracket
+          ],
+        ),
+      ),
+    );
   } // build bracket
 } // class bracket
