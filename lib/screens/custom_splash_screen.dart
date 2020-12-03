@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:PKPlan/screens/home.dart';
+import 'package:PKPlan/shared/custom_loading.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter/scheduler.dart';
 
 class CustomSplashScreen extends StatefulWidget {
   @override
@@ -10,22 +12,21 @@ class CustomSplashScreen extends StatefulWidget {
 
 class _CustomSplashScreenState extends State<CustomSplashScreen> {
   String _versionName = 'V1.0';
-  final splashDelay = 5;
+
+  _startTime() async {
+    var _duration = new Duration(seconds: 2);
+    return new Timer(_duration, _navigationPage);
+  }
+
+  void _navigationPage() {
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => Home()));
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadWidget();
-  }
-
-  _loadWidget() async {
-    Duration _duration = Duration(seconds: splashDelay);
-    return Timer(_duration, navigationPage);
-  }
-
-  void navigationPage() {
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (BuildContext context) => Home()));
+    _startTime();
   }
 
   @override
@@ -34,11 +35,12 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xffe7eff9),
-              Color(0xffcfd6e6),
+              Colors.white,
+              Colors.grey[400],
+              Colors.grey[800],
             ],
           ),
         ),
@@ -54,10 +56,13 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> {
                       child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Image.asset(
-                        'assets/images/icon.png',
-                        height: 100,
-                        width: 100,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20.0),
+                        child: Image.asset(
+                          'assets/images/icon.png',
+                          height: 200.0,
+                          width: 200.0,
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 10.0),
@@ -68,12 +73,9 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> {
                 Expanded(
                   child: Column(
                     children: <Widget>[
-                      SpinKitFadingCircle(
-                        color: Colors.blue,
-                        size: 50.0,
-                      ),
+                      CustomLoading(screen: 'splash'),
                       Container(
-                        height: 10,
+                        height: 10.0,
                       ),
                       Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,

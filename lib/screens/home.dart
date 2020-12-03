@@ -2,11 +2,12 @@ import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:core';
 import 'package:PKPlan/screens/custom_spannable_grid.dart';
+import 'package:PKPlan/screens/custom_splash_screen.dart';
 import 'package:PKPlan/screens/lectures.dart';
+import 'package:PKPlan/shared/custom_loading.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -16,10 +17,10 @@ class Home extends StatefulWidget {
   Home({Key key}) : super(key: key);
 
   @override
-  _HomeState createState() => _HomeState();
+  HomeState createState() => HomeState();
 }
 
-class _HomeState extends State<Home>
+class HomeState extends State<Home>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   List<List<String>> _schedule = [];
   List<List<String>> _rows = [];
@@ -39,8 +40,8 @@ class _HomeState extends State<Home>
   @override
   void initState() {
     super.initState();
-    _loadSchedule = _setupData();
     WidgetsBinding.instance.addObserver(this);
+    _loadSchedule = _setupData();
   }
 
   void _setLandscapeOrientation() {
@@ -215,7 +216,6 @@ class _HomeState extends State<Home>
           (row) => _searchedDate(row),
         )[0],
       );
-
       return _getData();
     } catch (e) {
       print(e.toString());
@@ -247,10 +247,7 @@ class _HomeState extends State<Home>
                   );
                 } else
                   return Center(
-                    child: SpinKitRotatingPlain(
-                      color: Colors.blue,
-                      size: 100.0,
-                    ),
+                    child: CustomLoading(screen: 'home'),
                   );
               },
             ),
@@ -275,7 +272,7 @@ class _HomeState extends State<Home>
                         iconSize: 20,
                         elevation: 10,
                         style: TextStyle(
-                          fontFamily: 'Open Sans',
+                          fontFamily: 'Arial',
                           fontSize: 15.0,
                           color: Colors.white,
                         ),
@@ -299,7 +296,13 @@ class _HomeState extends State<Home>
                                 value: date,
                                 child: Padding(
                                   padding: const EdgeInsets.all(5.0),
-                                  child: Text(date),
+                                  child: Text(
+                                    date,
+                                    style: TextStyle(
+                                      fontFamily: 'Arial',
+                                      fontSize: 15.0,
+                                    ),
+                                  ),
                                 ),
                               ),
                             )

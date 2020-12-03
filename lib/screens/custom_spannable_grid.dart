@@ -62,7 +62,7 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid>
           text,
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontFamily: 'Open Sans',
+            fontFamily: 'Arial',
             fontSize: 15.0,
             color: textColor,
           ),
