@@ -62,8 +62,9 @@ class HomeState extends State<Home>
   }
 
   T _tryCast<T>(dynamic x, {T fallback}) {
+    print(x.runtimeType);
     // tryParse from [int] `x`
-    if (x is int) {
+    if (x == int) {
       if (T == String) {
         // tryParse to [String]
         return x.toString() as T ?? fallback;
