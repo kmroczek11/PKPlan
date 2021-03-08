@@ -104,7 +104,8 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid>
 
         if (cell.name == '') colors = [Colors.white, Colors.grey];
 
-        if (cell.name.contains(':')) {
+        if (cell.name.contains('-')) {
+          // column with the classes duration
           colors = [Colors.black, Colors.grey];
           textColor = Colors.white;
         }
@@ -133,8 +134,8 @@ class _CustomSpannableGridState extends State<CustomSpannableGrid>
       int startingIndex, int endingIndex, int columnIndex, int rowIndex) {
     List<String> pair = row.getRange(startingIndex, endingIndex + 1).toList();
 
-    if (pair.any((e) => e.contains('ćwiczenia'))) {
-      String lectureName = pair.firstWhere((e) => e.contains('ćwiczenia'));
+    if (pair.any((e) => e.contains('ćw'))) {
+      String lectureName = pair.firstWhere((e) => e.contains('ćw'));
 
       converted.add(
         Cell(

@@ -12,6 +12,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:quiver/strings.dart';
+import 'package:string_validator/string_validator.dart';
 
 class Home extends StatefulWidget {
   Home({Key key}) : super(key: key);
@@ -26,12 +27,13 @@ class HomeState extends State<Home>
   List<List<String>> _rows = [];
   int _start = 0;
   int _end = 8; // take elements + 1
+  int _headerRows = 6; // unnecessary header rows
   double _scheduleUpdateBoxHeight = 26.0;
   Color _scheduleUpdateBoxColor = Colors.green[800];
   Sheet _sheet;
-  RegExp _dateReg = RegExp(
-    r'^([1-9]|0[1-9]|[12][0-9]|3[01])[-\.]([1-9]|0[1-9]|1[012])[-\.]\d{4}$',
-  ); // regex for checking dates in format dd.MM.yyyy
+  // RegExp _dateReg = RegExp(
+  //   r'^([1-9]|0[1-9]|[12][0-9]|3[01])[-\.]([1-9]|0[1-9]|1[012])[-\.]\d{4}$',
+  // ); // regex for checking dates in format dd.MM.yyyy
   DateTime _now = DateTime.now();
   List<String> _dates = [];
   String _selectedDate;
@@ -62,9 +64,15 @@ class HomeState extends State<Home>
   }
 
   T _tryCast<T>(dynamic x, {T fallback}) {
-    print(x.runtimeType);
+    // tryParse from [Formula] `x`
+    if (x is Formula) {
+      if (T == String) {
+        // tryParse to [String]
+        return x.value as T ?? fallback;
+      }
+    }
     // tryParse from [int] `x`
-    if (x == int) {
+    if (x is int) {
       if (T == String) {
         // tryParse to [String]
         return x.toString() as T ?? fallback;
@@ -124,15 +132,13 @@ class HomeState extends State<Home>
     return diff == 0 && _now.day == date.day;
   }
 
-  bool _searchedDate(List<String> row) {
-    if (_dateReg.hasMatch(row.first)) {
-      // check if first element in a row is a date
-      DateTime date = DateTime.parse(
-        row.first.split('.').reversed.join('.').replaceAll('.', '-'),
-      ); // parse date in format dd.MM.yyyy to yyyy-MM-dd
-      if (_isToday(date) || date.isAfter(_now)) return true;
-    }
-    return false;
+  bool _searchedDate(String date) {
+    if (isDate(date)) {
+      DateTime d = DateTime.parse(date);
+      if (_isToday(d) || d.isAfter(_now)) return true;
+      return false;
+    } else
+      return false;
   }
 
   bool _isDayOff(List<List<String>> rows) {
@@ -149,8 +155,9 @@ class HomeState extends State<Home>
   bool _getData() {
     try {
       int lectureIndex = _rows.indexWhere(
-        (row) => _searchedDate(row),
+        (row) => _searchedDate(row.first),
       );
+      print(lectureIndex);
 
       List<List<String>> lecturesRange = _rows
           .getRange(lectureIndex, lectureIndex + 10)
@@ -199,23 +206,26 @@ class HomeState extends State<Home>
       Excel excel = Excel.decodeBytes(bytes);
       _sheet = excel['2020_2021'];
 
-      _rows = _sheet.rows
-          .map(
-            // cast a whole sheet
-            (row) => row
-                .map((dynamic s) => _tryCast<String>(s, fallback: 'fallback'))
-                .toList(), // cast a row from [List<dynamic>] to [List<String>]
-          )
-          .toList();
+      _rows = _sheet.rows.getRange(_headerRows, _sheet.rows.length).map(
+          // cast a whole sheet
+          (row) {
+        if (row.first != null)
+          row.first = row.first.substring(0, row.first.indexOf('T'));
+        return row
+            .map((dynamic s) => _tryCast<String>(s, fallback: 'fallback'))
+            .toList(); // cast a row from [List<dynamic>] to [List<String>]
+      }).toList();
 
-      List<List<String>> dateRows =
-          _rows.where((row) => _dateReg.hasMatch(row.first)).toList();
-      dateRows.forEach((row) => _dates.add(row.first));
+      print(_rows);
+
+      _rows.forEach(
+        (row) => isDate(row.first) ? _dates.add(row.first) : null,
+      );
 
       setState(
-        () => _selectedDate = _rows.firstWhere(
-          (row) => _searchedDate(row),
-        )[0],
+        () => _selectedDate = _dates.firstWhere(
+          (date) => _searchedDate(date),
+        ),
       );
       return _getData();
     } catch (e) {
@@ -280,13 +290,7 @@ class HomeState extends State<Home>
                         onChanged: (String value) {
                           setState(
                             () => {
-                              _now = DateTime.parse(
-                                value
-                                    .split('.')
-                                    .reversed
-                                    .join('.')
-                                    .replaceAll('.', '-'),
-                              ),
+                              _now = DateTime.parse(value),
                               if (_getData()) _selectedDate = value,
                             },
                           );

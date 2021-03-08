@@ -12,6 +12,7 @@ class Lectures {
     Lecture(
         name: 'Analiza matematyczna',
         colors: [Color(0xffe0efd4), Color(0xffe9efe9)]),
+    Lecture(name: 'AM', colors: [Color(0xffe0efd4), Color(0xffe9efe9)]),
     // Lecture(
     //     name: 'Algebra z geometrią',
     //     colors: [Color(0xff00FF00), Color(0xffd7f5d7)]),
