@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'dart:core';
 import 'package:PKPlan/screens/custom_spannable_grid.dart';
 import 'package:PKPlan/screens/custom_splash_screen.dart';
-import 'package:PKPlan/screens/lectures.dart';
+import 'package:PKPlan/screens/classes.dart';
 import 'package:PKPlan/shared/custom_loading.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +25,9 @@ class HomeState extends State<Home>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   List<List<String>> _schedule = [];
   List<List<String>> _rows = [];
-  int _start = 0;
-  int _end = 8; // take elements + 1
+  // horizontal range in a sheet
+  int _start = 6;
+  int _end = 14; // take elements + 1
   int _headerRows = 6; // unnecessary header rows
   double _scheduleUpdateBoxHeight = 26.0;
   Color _scheduleUpdateBoxColor = Colors.green[800];
@@ -42,25 +43,7 @@ class HomeState extends State<Home>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _loadSchedule = _setupData();
-  }
-
-  void _setLandscapeOrientation() {
-    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    super.dispose();
-  }
-
-  @override
-  void didChangeMetrics() {
-    print('$WidgetsBindingObserver metrics changed ${DateTime.now()}: '
-        '${WidgetsBinding.instance.window.physicalSize.aspectRatio > 1 ? Orientation.landscape : Orientation.portrait}');
   }
 
   T _tryCast<T>(dynamic x, {T fallback}) {
@@ -68,9 +51,10 @@ class HomeState extends State<Home>
     if (x is Formula) {
       if (T == String) {
         // tryParse to [String]
-        return x.value as T ?? fallback;
+        return x.formula as T ?? fallback;
       }
     }
+
     // tryParse from [int] `x`
     if (x is int) {
       if (T == String) {
@@ -95,10 +79,9 @@ class HomeState extends State<Home>
     }
   }
 
-  bool _containsLectures(List<String> row) {
+  bool _containsClasses(List<String> row) {
     for (String e in row) {
-      for (Lecture lecture in Lectures.list)
-        if (e.contains(lecture.name)) return true;
+      for (Class c in Classes.list) if (e.contains(c.name)) return true;
     }
     return false;
   }
@@ -154,17 +137,17 @@ class HomeState extends State<Home>
 
   bool _getData() {
     try {
-      int lectureIndex = _rows.indexWhere(
+      int classesIndex = _rows.indexWhere(
         (row) => _searchedDate(row.first),
       );
-      print(lectureIndex);
+      print(classesIndex);
 
-      List<List<String>> lecturesRange = _rows
-          .getRange(lectureIndex, lectureIndex + 10)
-          .toList(); // get 7 rows + additional rows of nulls
-      // print(lecturesRange);
+      // vertical range in a sheet
+      List<List<String>> classesRange = _rows
+          .getRange(classesIndex, classesIndex + 10)
+          .toList(); // get rows + additional rows of nulls
 
-      if (_isDayOff(lecturesRange)) {
+      if (_isDayOff(classesRange)) {
         Fluttertoast.showToast(
             msg:
                 'Wybrany dzień jest wolny od zajęć. Wyświetlony zostanie plan na ostatni wybrany dzień.',
@@ -175,24 +158,28 @@ class HomeState extends State<Home>
       } else {
         setState(() => _schedule = []);
 
-        for (List<String> row in lecturesRange) {
+        for (List<String> row in classesRange) {
           List<String> properRange = row
               .getRange(_start, _end)
               .toList(); // get only the range of the chosen yearbook
-          if (_containsLectures(properRange)) {
-            // check if row contains chosen lectures
+          if (_containsClasses(properRange)) {
+            // check if row contains chosen classes
             properRange =
                 _clearWhitespaces(properRange); // remove extra whitespaces
-            properRange.removeAt(0); // remove first extra element
-            properRange.add(properRange[1]); // move first break to the end
+
+            // manage empty row elements
+            for (int i = 0; i < 3; i++) properRange.removeAt(0);
+            properRange.add('');
+
             // print('casted $casted');
+            // print(properRange);
             _schedule.add(properRange);
           }
           // log(_schedule.toString());
         }
       }
     } catch (e) {
-      print(e.toString());
+      print('exception getting data ${e.toString()}');
     }
     return true;
   }
@@ -204,29 +191,35 @@ class HomeState extends State<Home>
       Uint8List bytes =
           data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
       Excel excel = Excel.decodeBytes(bytes);
-      _sheet = excel['2020_2021'];
 
-      _rows = _sheet.rows.getRange(_headerRows, _sheet.rows.length).map(
-          // cast a whole sheet
-          (row) {
-        if (row.first != null)
-          row.first = row.first.substring(0, row.first.indexOf('T'));
-        return row
-            .map((dynamic s) => _tryCast<String>(s, fallback: 'fallback'))
-            .toList(); // cast a row from [List<dynamic>] to [List<String>]
-      }).toList();
+      /// typical error:Only valid value is 0: 6 (non-exisitng sheet)
+      _sheet = excel['2021_2022'];
 
-      print(_rows);
+      // take rows without a header
+      for (int row = _headerRows; row < _sheet.maxRows; row++) {
+        List<String> properRow = [];
+
+        _sheet.row(row).forEach((cell) {
+          final val = cell?.value; //  Value stored in the particular cell
+
+          String conv = _tryCast<String>(val, fallback: 'fallback');
+
+          int timeIndex = conv.indexOf('T');
+          if (timeIndex != -1) conv = conv.substring(0, timeIndex);
+
+          properRow.add(conv);
+        });
+
+        _rows.add(properRow);
+      }
 
       _rows.forEach(
         (row) => isDate(row.first) ? _dates.add(row.first) : null,
       );
 
-      setState(
-        () => _selectedDate = _dates.firstWhere(
+      setState(() => _selectedDate = _dates.firstWhere(
           (date) => _searchedDate(date),
-        ),
-      );
+          orElse: () => 'No matching element.'));
       return _getData();
     } catch (e) {
       print(e.toString());
@@ -249,7 +242,6 @@ class HomeState extends State<Home>
               future: _loadSchedule,
               builder: (BuildContext context, AsyncSnapshot snapshot) {
                 if (snapshot.hasData) {
-                  _setLandscapeOrientation();
                   return Provider.value(
                     value: _schedule,
                     child: CustomSpannableGrid(
@@ -257,9 +249,9 @@ class HomeState extends State<Home>
                     ),
                   );
                 } else
-                  return Center(
-                    child: CustomLoading(screen: 'home'),
-                  );
+                  return Container();
+                // else
+                //   return CustomSplashScreen();
               },
             ),
             Align(

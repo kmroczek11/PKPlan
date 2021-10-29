@@ -13,22 +13,6 @@ class CustomSplashScreen extends StatefulWidget {
 class _CustomSplashScreenState extends State<CustomSplashScreen> {
   String _versionName = 'V1.0';
 
-  _startTime() async {
-    var _duration = new Duration(seconds: 1);
-    return new Timer(_duration, _navigationPage);
-  }
-
-  void _navigationPage() {
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => Home()));
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _startTime();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,17 +61,19 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> {
                       Container(
                         height: 10.0,
                       ),
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: <Widget>[
-                            Spacer(),
-                            Text(_versionName),
-                            Spacer(
-                              flex: 4,
-                            ),
-                            Text('Made with love by Kamil Mroczek'),
-                            Spacer(),
-                          ])
+                      Expanded(
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: <Widget>[
+                              Spacer(),
+                              Text(_versionName),
+                              Spacer(
+                                flex: 4,
+                              ),
+                              Text('Made with love by Kamil Mroczek'),
+                              Spacer(),
+                            ]),
+                      )
                     ],
                   ),
                 ),
